@@ -1,0 +1,50 @@
+# Production Readiness Tasks
+
+- `[ ]` **Phase 0: Frontend Website Restructuring**
+  - `[ ]` Move existing game entry point from `/` to `/game` (`apps/web/app/game/page.tsx`).
+  - `[ ]` Create new pixelated GTA 1 themed Homepage at `/` (`apps/web/app/page.tsx`) with scroll effects and assets.
+  - `[ ]` Add "Play Now" button to Homepage (routes to `/game` as guest).
+  - `[ ]` Create Auth page at `/auth` (`apps/web/app/auth/page.tsx`) for name input and wallet connection. **(Custom Phantom Wallet Adapter)**
+  - `[ ]` Create Whitepaper page at `/whitepaper` (`apps/web/app/whitepaper/page.tsx`) for roadmap/game data.
+  - `[ ]` Update Game Server adapters to support a Hybrid storage model (Memory for Guests, Supabase for Auth Users).
+  - `[ ]` Block P2P Trading between Guests and Auth Players in `TradeService`.
+- `[ ]` **Phase 1: Persistence (Supabase)**
+  - `[ ]` Create Supabase project and get API keys (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
+  - `[ ]` Run `db/schema.sql` to create the database schema
+  - `[ ]` Enable RLS (Row Level Security) on all tables
+  - `[ ]` Implement `SupabaseAuthProvider` (must use the user's wallet address as the `userId`, no random IDs)
+  - `[ ]` Implement `SupabasePlayerRepository` (CRUD with optimistic version checks)
+  - `[ ]` Implement `SupabaseInventoryRepository` (CRUD, item_instances + inventory_locks)
+  - `[ ]` Implement `SupabaseMarketplaceRepository` (CRUD on marketplace_listings)
+  - `[ ]` Implement `SupabaseTradeRepository` (CRUD on trade_sessions + trade_offers)
+  - `[ ]` Implement `SupabaseEconomyLedgerRepository` (Idempotent events)
+  - `[ ]` Update `createGameServices()` in `services.ts` to use the adapter registry for repositories
+- `[ ]` **Phase 2: Cache & Presence (Upstash Redis)**
+  - `[ ]` Create Upstash Redis instance and get keys (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
+  - `[ ]` Implement `UpstashRedisCacheProvider` (get, set, del, incr)
+- `[ ]` **Phase 3: Blockchain Integration (Helius Solana)**
+  - `[ ]` Set up Helius API key and configure devnet environment
+  - `[ ]` Implement basic chain methods: `createWallet`, `getBalance`, `getWalletAssets`, `getTransactionStatus`
+  - `[ ]` Implement `mintItemAsset` using Bubblegum (cNFT) or Metaplex Core
+  - `[ ]` Implement `createMarketplaceEscrow`, `cancelMarketplaceEscrow`, and `settleMarketplacePurchase`
+  - `[ ]` Implement `createTradeEscrow` and `settleTrade` (atomic swaps)
+  - `[ ]` Implement `subscribeToAssetEvents` (Helius webhooks to confirm signatures and update DB)
+  - `[ ]` (Optional) Wire Solana Wallet Adapter on the frontend client
+- `[ ]` **Phase 4: Realtime Scaling (Colyseus)**
+  - `[ ]` Stand up game server (Docker) behind wss:// with sticky routing
+  - `[ ]` Implement Colyseus realtime provider (one room per map district)
+  - `[ ]` Implement Redis presence/driver for Colyseus
+- `[ ]` **Phase 5: Tuning, Safety & Structural Fixes**
+  - `[ ]` Turn off `NEXT_PUBLIC_DEV_FAST_GRIND` and `NEXT_PUBLIC_ENABLE_ADMIN`
+  - `[ ]` Add rate limiting via Redis on join, jobs, salvage, marketplace, and trades
+  - `[ ]` Implement transactional unit-of-work in Supabase adapter (multi-write flows need atomic commit)
+  - `[ ]` Implement async chain-confirmation state machine (submit -> pending -> webhook confirm -> finalize)
+  - `[ ]` Refactor atomic settlement routing for GRID purchases
+  - `[ ]` Add `pending_mint` retry sweep job
+  - `[ ]` Ensure ledger completeness (fee burns, per-item trade movements)
+- `[ ]` **Phase 6: Verification & Testing**
+  - `[ ]` Ensure all tests (`pnpm test`) and builds pass in CI
+  - `[ ]` Smoke test against the deployed server
+  - `[ ]` Load test according to `scaling.md`
+  - `[ ]` Audit marketplace/trade locks
+  - `[ ]` Verify webhook settlement path and minting via DAS API
